@@ -5,7 +5,7 @@ from langchain_community.document_loaders import SeleniumURLLoader
 from typing import List
 from fastapi.middleware.cors import CORSMiddleware
 from utils import OllamaClient, ChromaClient, Chunker, RAGPipeline
-
+from schemas import LLMResponse
 from dotenv import load_dotenv
 
 import os
@@ -51,34 +51,27 @@ app.add_middleware(
 
 
 @app.post("/chat")
-async def chat(text: str):
-   global context
-   res = ollama_client.generate(text, context)
-   if context == []:
-       context=res["context"]
-   return {"message": res["response"]}
+async def chat(text: str) -> LLMResponse:
+    global context
+    res = ollama_client.generate(text, context)
+    if context == []:
+        context=res["context"]
+    llm_response = LLMResponse(query=text, result=res["response"])
+    return llm_response
 
 @app.post("/verify_contract")
-async def verify_contract(file: UploadFile):
+async def verify_contract(file: UploadFile) -> LLMResponse:
     data = await file.read()
     if file.filename.split(".")[-1] in rejected_file_types:
         raise HTTPException(status_code=406, detail="We do not support other file types other than {}".format("".join(allowed_file_types)))
     else:
         res = pipeline.invoke(data)
-        return res
+        return LLMResponse(**res)
 
 @app.post("/verify_text")
-async def verify_text(text: str):
+async def verify_text(text: str) -> LLMResponse:
    res = pipeline.invoke(text)
-   return res
-
-@app.post("/chat")
-async def chat(text: str):
-   global context
-   res = ollama_client.generate(text, context)
-   if context == []:
-       context=res["context"]
-   return {"message": res["response"]}
+   return LLMResponse(**res)
 
 
 @app.post("/ingest_documents")
