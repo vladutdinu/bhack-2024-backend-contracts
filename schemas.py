@@ -2,6 +2,9 @@ from typing import List
 from pydantic import BaseModel
 from datetime import datetime
 
+class Chat(BaseModel):
+    query: str
+
 class Metadata(BaseModel):
     source: str
     tag: str

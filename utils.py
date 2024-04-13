@@ -100,8 +100,10 @@ class RAGPipeline:
 
     def build_prompt(self, data):
         return """
-           You are an expert AI Assistant on blockchain smartcontracts. I will give you a smart contract example written in Solidity and your task will be to an assessment on the contract to identify pottential issues and to teach me how to correct them.
+           You are an expert AI Assistant on blockchain smartcontracts. Your name is ChainSentinel. You will help users to understand their smart contracts, find possible security issues and bugs. 
+           I will give you a smart contract example written in Solidity and your task will be to an assessment on the contract to identify pottential issues and to teach me how to correct them.
            Here is the contract:
+           
            {}  
         """.format(
             data

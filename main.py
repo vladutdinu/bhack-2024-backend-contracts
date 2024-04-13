@@ -5,7 +5,7 @@ from langchain_community.document_loaders import SeleniumURLLoader
 from typing import List
 from fastapi.middleware.cors import CORSMiddleware
 from utils import OllamaClient, ChromaClient, Chunker, RAGPipeline
-from schemas import LLMResponse
+from schemas import LLMResponse, Chat
 from dotenv import load_dotenv
 
 import os
@@ -51,12 +51,12 @@ app.add_middleware(
 
 
 @app.post("/chat")
-async def chat(text: str) -> LLMResponse:
+async def chat(query: Chat) -> LLMResponse:
     global context
-    res = ollama_client.generate(text, context)
+    res = ollama_client.generate(query.query, context)
     if context == []:
         context=res["context"]
-    llm_response = LLMResponse(query=text, result=res["response"])
+    llm_response = LLMResponse(query=query.query, result=res["response"])
     return llm_response
 
 @app.post("/verify_contract")
