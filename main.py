@@ -80,6 +80,8 @@ async def verify_contract(file: UploadFile) -> LLMResponse:
         )
     else:
         res = pipeline.invoke(data)
+        print(res.keys())
+        print(res['source_documents'])
         return LLMResponse(
             query=res["query"],
             result=res["result"],
