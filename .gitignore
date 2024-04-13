@@ -1,4 +1,3 @@
 .env
-chromadb/*
 __pycache__/*
 venv/*
