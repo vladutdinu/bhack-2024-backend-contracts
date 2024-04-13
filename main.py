@@ -24,7 +24,7 @@ allowed_file_types=["sol"]
 async def lifespan(app: FastAPI):
     global pipeline, chroma_client, ingester, ollama_client
     model_kwargs = {'device': 'cpu', "trust_remote_code": True}
-    ollama_client = OllamaClient(os.getenv("OLLAMA_URL"), os.getenv("OLAMA_MODEL"))
+    ollama_client = OllamaClient(os.getenv("OLLAMA_URL"), os.getenv("OLLAMA_MODEL"))
     chroma_client = ChromaClient(os.getenv("CHROMA_PATH", "./chromadb")).chroma_client
     pipeline = RAGPipeline(os.getenv("RAG_MODEL_NAME"), model_kwargs, os.getenv("OLLAMA_URL"), os.getenv("OLAMA_MODEL"), chroma_client, os.getenv("CHROMA_COLLECTION"))
     ingester = Chunker((os.getenv("CHUNKER_MODEL_NAME")), 768)
