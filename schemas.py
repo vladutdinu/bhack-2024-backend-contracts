@@ -15,7 +15,6 @@ class Metadata(BaseModel):
 class Sources(BaseModel):
     page_content: str
     metadata: Metadata
-    type: str
 
 class LLMResponse(BaseModel):
     query: str
