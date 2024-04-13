@@ -5,7 +5,7 @@ from langchain_community.document_loaders import SeleniumURLLoader
 from typing import List
 from fastapi.middleware.cors import CORSMiddleware
 from utils import OllamaClient, ChromaClient, Chunker, RAGPipeline
-from schemas import IngestUrls, LLMResponse, Chat
+from schemas import IngestUrls, LLMResponse, Chat, Metadata, Sources
 from dotenv import load_dotenv
 
 import os
@@ -26,10 +26,10 @@ async def lifespan(app: FastAPI):
     model_kwargs = {'device': 'cpu', "trust_remote_code": True}
     ollama_client = OllamaClient(os.getenv("OLLAMA_URL"), os.getenv("OLLAMA_MODEL"))
     chroma_client = ChromaClient(os.getenv("CHROMA_PATH", "./chromadb")).chroma_client
-    pipeline = RAGPipeline(os.getenv("RAG_MODEL_NAME"), model_kwargs, os.getenv("OLLAMA_URL"), os.getenv("OLAMA_MODEL"), chroma_client, os.getenv("CHROMA_COLLECTION"))
+    pipeline = RAGPipeline(os.getenv("RAG_MODEL_NAME"), model_kwargs, os.getenv("OLLAMA_URL"), os.getenv("OLLAMA_MODEL"), chroma_client, os.getenv("CHROMA_COLLECTION"))
     ingester = Chunker((os.getenv("CHUNKER_MODEL_NAME")), 768)
     yield
-    del chroma_client, pipeline, ollama_client
+    del chroma_client, pipeline, ollama_client, pipeline, ingester
 
 
 app = FastAPI(lifespan=lifespan)
@@ -66,12 +66,13 @@ async def verify_contract(file: UploadFile) -> LLMResponse:
         raise HTTPException(status_code=406, detail="We do not support other file types other than {}".format("".join(allowed_file_types)))
     else:
         res = pipeline.invoke(data)
-        return LLMResponse(**res)
+        return LLMResponse(query=res["query"], result=res["result"], source_documents=[Sources(page_content=src.page_content, metadata=Metadata(source=src.metadata["source"], tag=src.metadata["tag"]), type=src.type) for src in res["source_documents"]])
+
 
 @app.post("/verify_text")
 async def verify_text(query: Chat) -> LLMResponse:
-   res = pipeline.invoke(query.query)
-   return LLMResponse(**res)
+    res = pipeline.invoke(query.query)
+    return LLMResponse(query=res["query"], result=res["result"], source_documents=[Sources(page_content=src.page_content, metadata=Metadata(source=src.metadata["source"], tag=src.metadata["tag"]), type=src.type) for src in res["source_documents"]])
 
 
 @app.post("/ingest_documents")
