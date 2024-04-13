@@ -10,6 +10,7 @@ import os
 load_dotenv()
 
 ollama_client = None
+context = []
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
