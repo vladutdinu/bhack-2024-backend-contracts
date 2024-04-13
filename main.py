@@ -27,7 +27,7 @@ async def chat(text: str):
    res = ollama_client.generate(text, context)
    if context == []:
        context=res["context"]
-   return res["response"]
+   return {"message": res["response"]}
 
 if __name__ == "__main__":
     import uvicorn, os
