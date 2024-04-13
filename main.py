@@ -83,21 +83,21 @@ async def ingest_documents(files: List[UploadFile]):
             file_type = "PDF"
         else:
             raise HTTPException(status_code=406, detail="We do not support other file types other than PDFs")
-        ingester.ingest(data, file.filename, file_type, os.getenv("OLLAMA_URL"), os.getenv("E_MODEL_NAME"),os.getenv("CHROMA_PATH", "./chromadb"), os.getenv("CHROMA_COLLECTION"))
         try:
-            return {"message": "ok"}
+            ingester.ingest(data, file.filename, file_type, os.getenv("OLLAMA_URL"), os.getenv("E_MODEL_NAME"),os.getenv("CHROMA_PATH", "./chromadb"), os.getenv("CHROMA_COLLECTION"))
         except:
              raise HTTPException(status_code=500, detail="Problem")
+        return {"message": "ok"}
 
 @app.post("/ingest_urls")
 async def ingest_urls(urls: List[str]):
     for url in urls:
         file_type = "URL"
-        ingester.ingest(SeleniumURLLoader(urls=[url]).load()[0].page_content, url, file_type, os.getenv("OLLAMA_URL"), os.getenv("E_MODEL_NAME"),os.getenv("CHROMA_PATH", "./chromadb"), os.getenv("CHROMA_COLLECTION"))
         try:
-            return {"message": "ok"}
+            ingester.ingest(SeleniumURLLoader(urls=[url]).load()[0].page_content, url, file_type, os.getenv("OLLAMA_URL"), os.getenv("E_MODEL_NAME"),os.getenv("CHROMA_PATH", "./chromadb"), os.getenv("CHROMA_COLLECTION"))
         except:
              raise HTTPException(status_code=500, detail="Problem")
+        return {"message": "ok"}
 
 if __name__ == "__main__":
     import uvicorn, os
