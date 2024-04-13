@@ -1,6 +1,9 @@
-import ollama
+from langchain_community.vectorstores import Chroma
 import chromadb
 import ollama
+from langchain_community.embeddings import HuggingFaceEmbeddings 
+from langchain_community.llms.ollama import Ollama
+from langchain.chains import RetrievalQA
 from tokenizers import Tokenizer
 from semantic_text_splitter import HuggingFaceTextSplitter
 import fitz
@@ -68,3 +71,41 @@ class Chunker:
                 chroma_client.add(
                     [id], [embed], documents=[chunk], metadatas={"source": filename}
                 )        
+
+
+class RAGPipeline:
+    def __init__(
+        self,
+        e_model_name,
+        e_model_kwargs,
+        ollama_url,
+        ollama_model,
+        chroma_client,
+        chroma_collection_name,
+    ):
+        self.embeddings = HuggingFaceEmbeddings(
+            model_name=e_model_name, model_kwargs=e_model_kwargs
+        )
+        self.ollama_llm = Ollama(base_url=ollama_url, model=ollama_model)
+        self.db_retriever = Chroma(
+            client=chroma_client,
+            collection_name=chroma_collection_name,
+            embedding_function=self.embeddings,
+        )
+        self.rag = RetrievalQA.from_chain_type(
+            self.ollama_llm,
+            retriever=self.db_retriever.as_retriever(),
+            return_source_documents=True,
+        )
+
+    def build_prompt(self, data):
+        return """
+           You are an expert AI Assistant on blockchain smartcontracts. I will give you a smart contract example written in Solidity and your task will be to an assessment on the contract to identify pottential issues and to teach me how to correct them.
+           Here is the contract:
+           {}  
+        """.format(
+            data
+        )
+
+    def invoke(self, contract):
+        return self.rag.invoke({"query": self.build_prompt(contract)})
