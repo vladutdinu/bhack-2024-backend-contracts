@@ -69,8 +69,8 @@ async def verify_contract(file: UploadFile) -> LLMResponse:
         return LLMResponse(**res)
 
 @app.post("/verify_text")
-async def verify_text(text: str) -> LLMResponse:
-   res = pipeline.invoke(text)
+async def verify_text(query: Chat) -> LLMResponse:
+   res = pipeline.invoke(query.query)
    return LLMResponse(**res)
 
 
