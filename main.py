@@ -25,6 +25,7 @@ origins = [
     "http://localhost",
     "http://localhost:5173",
     "https://chainsentinel.mihneahututui.eu",
+    "https://chainsentinel.app.genez.io"
 ]
 
 app.add_middleware(
