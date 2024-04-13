@@ -5,7 +5,7 @@ from langchain_community.document_loaders import SeleniumURLLoader
 from typing import List
 from fastapi.middleware.cors import CORSMiddleware
 from utils import OllamaClient, ChromaClient, Chunker, RAGPipeline
-from schemas import LLMResponse, Chat
+from schemas import IngestUrls, LLMResponse, Chat
 from dotenv import load_dotenv
 
 import os
@@ -90,8 +90,8 @@ async def ingest_documents(files: List[UploadFile]):
         return {"message": "ok"}
 
 @app.post("/ingest_urls")
-async def ingest_urls(urls: List[str]):
-    for url in urls:
+async def ingest_urls(urls_to_ingest: IngestUrls):
+    for url in urls_to_ingest.urls:
         file_type = "URL"
         try:
             ingester.ingest(SeleniumURLLoader(urls=[url]).load()[0].page_content, url, file_type, os.getenv("OLLAMA_URL"), os.getenv("E_MODEL_NAME"),os.getenv("CHROMA_PATH", "./chromadb"), os.getenv("CHROMA_COLLECTION"))

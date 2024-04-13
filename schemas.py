@@ -5,6 +5,9 @@ from datetime import datetime
 class Chat(BaseModel):
     query: str
 
+class IngestUrls(BaseModel):
+    urls: List[str]
+
 class Metadata(BaseModel):
     source: str
     tag: str
