@@ -85,9 +85,8 @@ async def verify_contract(file: UploadFile) -> LLMResponse:
             result=res["result"],
             source_documents=[
                 Sources(
-                    page_content=src.page_content,
                     metadata=Metadata(
-                        source=src.metadata["source"], tag=src.metadata["tag"]
+                        source=src.metadata["source"]
                     ),
                 )
                 for src in res["source_documents"]
@@ -103,9 +102,8 @@ async def verify_text(query: Chat) -> LLMResponse:
         result=res["result"],
         source_documents=[
             Sources(
-                page_content=src.page_content,
                 metadata=Metadata(
-                    source=src.metadata["source"], tag=src.metadata["tag"]
+                    source=src.metadata["source"]
                 ),
             )
             for src in res["source_documents"]

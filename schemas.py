@@ -10,10 +10,8 @@ class IngestUrls(BaseModel):
 
 class Metadata(BaseModel):
     source: str
-    tag: str
 
 class Sources(BaseModel):
-    page_content: str
     metadata: Metadata
 
 class LLMResponse(BaseModel):
