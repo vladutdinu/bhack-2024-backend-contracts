@@ -79,14 +79,8 @@ app.add_middleware(
 @app.post("/chat")
 async def chat(query: Chat) -> LLMResponse:
 
-    if prompt_injection_classifier(query)[0]["label"] == "INJECTION":
-        return {"status": "error", "message": "Prompt injection detected in query"}
-
     global context
     res = ollama_client.generate(query.query, context)
-
-    if prompt_injection_classifier(res["response"])[0]["label"] == "INJECTION":
-        return {"status": "error", "message": "Vulnerable content detected in response"}
 
     if not context:
         context = res["context"]
@@ -107,7 +101,14 @@ async def verify_contract(file: UploadFile) -> LLMResponse:
             ),
         )
     else:
-        res = pipeline.invoke(data)
+        if prompt_injection_classifier(query.query)[0]["label"] == "INJECTION":
+            return {"status": "error", "message": "Prompt injection detected in query"}
+
+        res = pipeline.invoke(query.query)
+
+        if prompt_injection_classifier(res["result"])[0]["label"] == "INJECTION":
+            return {"status": "error", "message": "Prompt injection detected in result"}
+
         return LLMResponse(
             query=res["query"],
             result=res["result"],
@@ -122,7 +123,15 @@ async def verify_contract(file: UploadFile) -> LLMResponse:
 
 @app.post("/verify_text")
 async def verify_text(query: Chat) -> LLMResponse:
+
+    if prompt_injection_classifier(query.query)[0]["label"] == "INJECTION":
+        return {"status": "error", "message": "Prompt injection detected in query"}
+
     res = pipeline.invoke(query.query)
+
+    if prompt_injection_classifier(res["result"])[0]["label"] == "INJECTION":
+        return {"status": "error", "message": "Prompt injection detected in result"}
+
     return LLMResponse(
         query=res["query"],
         result=res["result"],
