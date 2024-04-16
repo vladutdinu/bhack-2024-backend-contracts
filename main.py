@@ -1,3 +1,4 @@
+import os
 from contextlib import asynccontextmanager
 from http.client import HTTPException
 from fastapi import FastAPI, UploadFile
@@ -7,8 +8,25 @@ from fastapi.middleware.cors import CORSMiddleware
 from utils import OllamaClient, ChromaClient, Chunker, RAGPipeline
 from schemas import IngestUrls, LLMResponse, Chat, Metadata, Sources
 from dotenv import load_dotenv
+from transformers import AutoTokenizer, AutoModelForSequenceClassification, pipeline
+import torch
 
-import os
+prompt_injection_tokenizer = AutoTokenizer.from_pretrained(
+    "ProtectAI/deberta-v3-base-prompt-injection"
+)
+prompt_injection_model = AutoModelForSequenceClassification.from_pretrained(
+    "ProtectAI/deberta-v3-base-prompt-injection"
+)
+
+prompt_injection_classifier = pipeline(
+    "text-classification",
+    model=prompt_injection_model,
+    tokenizer=prompt_injection_tokenizer,
+    truncation=True,
+    max_length=512,
+    device=torch.device("cuda" if torch.cuda.is_available() else "cpu"),
+)
+
 
 load_dotenv()
 
@@ -60,12 +78,22 @@ app.add_middleware(
 
 @app.post("/chat")
 async def chat(query: Chat) -> LLMResponse:
+
+    if prompt_injection_classifier(query)[0]["label"] == "INJECTION":
+        return {"status": "error", "message": "Prompt injection detected in query"}
+
     global context
     res = ollama_client.generate(query.query, context)
-    if context == []:
+
+    if prompt_injection_classifier(res["response"])[0]["label"] == "INJECTION":
+        return {"status": "error", "message": "Vulnerable content detected in response"}
+
+    if not context:
         context = res["context"]
+
     llm_response = LLMResponse(query=query.query, result=res["response"])
-    return llm_response
+
+    return {"status": "success", "response": llm_response}
 
 
 @app.post("/verify_contract")
@@ -85,9 +113,7 @@ async def verify_contract(file: UploadFile) -> LLMResponse:
             result=res["result"],
             source_documents=[
                 Sources(
-                    metadata=Metadata(
-                        source=src.metadata["source"]
-                    ),
+                    metadata=Metadata(source=src.metadata["source"]),
                 )
                 for src in res["source_documents"]
             ],
@@ -102,9 +128,7 @@ async def verify_text(query: Chat) -> LLMResponse:
         result=res["result"],
         source_documents=[
             Sources(
-                metadata=Metadata(
-                    source=src.metadata["source"]
-                ),
+                metadata=Metadata(source=src.metadata["source"]),
             )
             for src in res["source_documents"]
         ],
@@ -156,6 +180,7 @@ async def ingest_urls(urls_to_ingest: IngestUrls):
 
 
 if __name__ == "__main__":
-    import uvicorn, os
+    import uvicorn
+    import os
 
     uvicorn.run(app, host=os.getenv("HOST", "0.0.0.0"), port=os.getenv("PORT", "8000"))
