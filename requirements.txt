@@ -14,7 +14,6 @@ chromadb==0.4.23
 tokenizers==0.15.2
 transformers==4.39.3
 python-multipart==0.0.9
-sentence-transformers==2.6.1
 einops==0.7.0
 python-dotenv==1.0.1
 uvicorn==0.29.0

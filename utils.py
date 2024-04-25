@@ -23,8 +23,11 @@ class ChromaClient:
 
 
 class Chunker:
-    def __init__(self, embeddings_model, max_tokens):
-        self.tokenizer = Tokenizer.from_pretrained(embeddings_model)
+    def __init__(self, tokenizer, max_tokens):
+        try:
+            self.tokenizer = Tokenizer.from_file(tokenizer)
+        except:
+            self.tokenizer = Tokenizer.from_pretrained(tokenizer)
         self.splitter = HuggingFaceTextSplitter(self.tokenizer, trim_chunks=True)
         self.max_tokens = max_tokens
 

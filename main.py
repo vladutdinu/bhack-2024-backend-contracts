@@ -3,29 +3,10 @@ from contextlib import asynccontextmanager
 from http.client import HTTPException
 from fastapi import FastAPI, UploadFile
 from langchain_community.document_loaders import SeleniumURLLoader
-from typing import List
 from fastapi.middleware.cors import CORSMiddleware
 from utils import OllamaClient, ChromaClient, Chunker, RAGPipeline
 from schemas import IngestUrls, LLMResponse, Chat, Metadata, Sources
 from dotenv import load_dotenv
-from transformers import AutoTokenizer, AutoModelForSequenceClassification, pipeline
-import torch
-
-prompt_injection_tokenizer = AutoTokenizer.from_pretrained(
-    "ProtectAI/deberta-v3-base-prompt-injection"
-)
-prompt_injection_model = AutoModelForSequenceClassification.from_pretrained(
-    "ProtectAI/deberta-v3-base-prompt-injection"
-)
-
-prompt_injection_classifier = pipeline(
-    "text-classification",
-    model=prompt_injection_model,
-    tokenizer=prompt_injection_tokenizer,
-    truncation=True,
-    max_length=512,
-    device=torch.device("cuda" if torch.cuda.is_available() else "cpu"),
-)
 
 
 load_dotenv()
@@ -101,13 +82,8 @@ async def verify_contract(file: UploadFile) -> LLMResponse:
             ),
         )
     else:
-        if prompt_injection_classifier(query.query)[0]["label"] == "INJECTION":
-            return {"status": "error", "message": "Prompt injection detected in query"}
 
-        res = pipeline.invoke(query.query)
-
-        if prompt_injection_classifier(res["result"])[0]["label"] == "INJECTION":
-            return {"status": "error", "message": "Prompt injection detected in result"}
+        res = pipeline.invoke(data)
 
         return LLMResponse(
             query=res["query"],
@@ -124,13 +100,7 @@ async def verify_contract(file: UploadFile) -> LLMResponse:
 @app.post("/verify_text")
 async def verify_text(query: Chat) -> LLMResponse:
 
-    if prompt_injection_classifier(query.query)[0]["label"] == "INJECTION":
-        return {"status": "error", "message": "Prompt injection detected in query"}
-
     res = pipeline.invoke(query.query)
-
-    if prompt_injection_classifier(res["result"])[0]["label"] == "INJECTION":
-        return {"status": "error", "message": "Prompt injection detected in result"}
 
     return LLMResponse(
         query=res["query"],
